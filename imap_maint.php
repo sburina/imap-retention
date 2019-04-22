@@ -50,11 +50,11 @@ function processAccount($account, $data)
 			switch ($criteria) {
 				case 'days':
 				default:
-					purgeFolderByAge($imap_stream, $data['mailbox'],
+					purgeFolderByAge($imap_stream, $data['root_folder'], $data['mailbox'],
 						$data['separator'], $folder, $val);
 					break;
 				case 'last':
-					purgeFolderByNumber($imap_stream, $data['mailbox'],
+					purgeFolderByNumber($imap_stream, $data['root_folder'], $data['mailbox'],
 						$data['separator'], $folder, $val);
 					break;
 			}
@@ -69,27 +69,29 @@ function processAccount($account, $data)
 
 /**
  * @param $imap_stream
+ * @param $root
  * @param $mailbox
  * @param $separator
  * @param $folder
  * @param $days
  */
-function purgeFolderByAge($imap_stream, $mailbox, $separator, $folder, $days)
+function purgeFolderByAge($imap_stream, $root, $mailbox, $separator, $folder, $days)
 {
 	$eFolder = imap_utf7_encode($folder);
-	if (imap_reopen($imap_stream, $mailbox . $separator . $eFolder)) {
+	$eFolder = (!empty($root)) ? $root . $separator . $eFolder : $eFolder;
+	if (imap_reopen($imap_stream, $mailbox . $eFolder)) {
 		$imap_date = date("j M Y", strtotime("-" . $days . " days"));
 		say("--> Searching for messages older than " . $imap_date . " in folder " . $folder);
 		$to_del = imap_search($imap_stream, 'UNFLAGGED BEFORE "' . $imap_date . '"', SE_UID);
 		if ($to_del) {   // Array or null
 			say("*** Found " . sizeof($to_del) . " messages to delete");
-			$status = imap_status($imap_stream, $mailbox . $separator . $eFolder, SA_ALL);
+			$status = imap_status($imap_stream, $mailbox . $eFolder, SA_ALL);
 			say("??? Number of messages before deletion: " . $status->messages);
 			foreach ($to_del as $uid) {
 				imap_delete($imap_stream, $uid, FT_UID);
 			}
 			imap_expunge($imap_stream);
-			$status = imap_status($imap_stream, $mailbox . $separator . $eFolder, SA_ALL);
+			$status = imap_status($imap_stream, $mailbox . $eFolder, SA_ALL);
 			say("??? Number of messages after deletion: " . $status->messages);
 		} else {
 			say("<-- No messages to delete in this IMAP folder.");
@@ -101,17 +103,19 @@ function purgeFolderByAge($imap_stream, $mailbox, $separator, $folder, $days)
 
 /**
  * @param $imap_stream
+ * @param $root
  * @param $mailbox
  * @param $separator
  * @param $folder
  * @param $num
  */
-function purgeFolderByNumber($imap_stream, $mailbox, $separator, $folder, $num)
+function purgeFolderByNumber($imap_stream, $root, $mailbox, $separator, $folder, $num)
 {
 	$eFolder = imap_utf7_encode($folder);
-	if (imap_reopen($imap_stream, $mailbox . $separator . $eFolder)) {
+	$eFolder = (!empty($root)) ? $root . $separator . $eFolder : $eFolder;
+	if (imap_reopen($imap_stream, $mailbox . $eFolder)) {
 		say("--> Looking for messages that exceed the maximum of " . $num . " in folder " . $folder);
-		$status = imap_status($imap_stream, $mailbox . $separator . $eFolder, SA_ALL);
+		$status = imap_status($imap_stream, $mailbox . $eFolder, SA_ALL);
 		if ($status->messages > $num) {
 			say("*** Found " . ($status->messages - $num) . " messages to delete, keeping the last " . $num);
 			say("??? Number of messages before deletion: " . $status->messages);
@@ -124,7 +128,7 @@ function purgeFolderByNumber($imap_stream, $mailbox, $separator, $folder, $num)
 				}
 			}
 			imap_expunge($imap_stream);
-			$status = imap_status($imap_stream, $mailbox . $separator . $eFolder, SA_ALL);
+			$status = imap_status($imap_stream, $mailbox . $eFolder, SA_ALL);
 			say("??? Number of messages after deletion: " . $status->messages);
 		} else {
 			say("<-- No messages to delete in this IMAP folder.");

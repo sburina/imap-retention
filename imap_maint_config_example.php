@@ -8,7 +8,8 @@
 return [
 	// IMAP Account 1
 	'ACCOUNT_NAME_1' => [
-		'mailbox'   => '{mail.example.com:993/imap/ssl/novalidate-cert}INBOX',
+		'mailbox'   => '{mail.example.com:993/imap/ssl/novalidate-cert}',
+		'root_folder' => 'INBOX',
 		'separator' => '.',
 		'username'  => 'IMAP_USERNAME',
 		'password'  => 'IMAP_PASSWORD',
@@ -24,7 +25,8 @@ return [
 
 	// IMAP Account 2
 	'ACCOUNT_NAME_2' => [
-		'mailbox'   => '{mail.example.com:993/imap/ssl/novalidate-cert}INBOX',
+		'mailbox'   => '{mail.example.com:993/imap/ssl/novalidate-cert}',
+		'root_folder' => null, // or ''
 		'separator' => '/',
 		'username'  => 'IMAP_USERNAME',
 		'password'  => 'IMAP_PASSWORD',
